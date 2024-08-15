@@ -1,0 +1,78 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-image: url("assets/bg-2.7b512602.png");
+  animation: changeBackground 5s infinite;
+  transition: background-image 1s ease-in-out;
+}
+
+@keyframes changeBackground {
+  0% {
+    background-image: url("assets/bg-2.7b512602.png");
+  }
+  50% {
+    background-image: url("assets/bg-3.017bd6f4.png");
+  }
+  100% {
+    background-image: url("assets/bg-2.7b512602.png");
+  }
+}
+
+#name {
+  color: #fff;
+  margin-bottom: 40px;
+}
+#game {
+  text-align: center;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-gap: 10px;
+  margin: 20px 0;
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2em;
+  cursor: pointer;
+  border: 2px solid #ccc;
+}
+
+.cell img {
+  max-width: 80%;
+  max-height: 80%;
+}
+
+#status {
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: white;
+  font-weight: bold;
+  background: transparent;
+}
+#status img {
+  max-width: 70px;
+  max-height: 70px;
+}
+
+#restart {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: bold;
+  background-color: #2074f5;
+}
