@@ -11,7 +11,7 @@ const iconO = "assets/python.png";
 
 const winningConditions = [
   [0, 1, 2],
-  [3, 4, 5],
+  ``[(3, 4, 5)],
   [6, 7, 8],
   [0, 3, 6],
   [1, 4, 7],
@@ -26,6 +26,15 @@ for (let i = 0; i < 9; i++) {
   cell.setAttribute("data-index", i);
   board.appendChild(cell);
 }
+
+const preloadImages = (urls) => {
+  urls.forEach((url) => {
+    const img = new Image();
+    img.src = url;
+  });
+};
+
+preloadImages([iconX, iconO]);
 
 const cells = Array.from(document.getElementsByClassName("cell"));
 

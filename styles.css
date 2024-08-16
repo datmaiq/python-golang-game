@@ -60,10 +60,12 @@ body {
   color: white;
   font-weight: bold;
   background: transparent;
+  height: 80px;
 }
 #status img {
-  max-width: 70px;
-  max-height: 70px;
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
 }
 
 #restart {
