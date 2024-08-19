@@ -97,7 +97,7 @@ const createBoard = (size) => {
 
   let cellSize;
   if (size <= 5) {
-    cellSize = "60px";
+    cellSize = "80px";
   } else {
     cellSize = "30px";
   }
