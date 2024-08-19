@@ -102,16 +102,31 @@ const createBoard = (size) => {
     cellSize = "30px";
   }
 
-  for (let i = 0; i < size * size; i++) {
-    const cell = document.createElement("div");
-    cell.classList.add("cell");
-    cell.style.width = cellSize;
-    cell.style.height = cellSize;
-    cell.setAttribute("data-index", i);
-    board.appendChild(cell);
-  }
+  gameState = Array(size * size).fill(""); // Initialize the game state
 
-  cells = Array.from(document.getElementsByClassName("cell"));
+  const createCellsChunk = (startIndex) => {
+    const fragment = document.createDocumentFragment();
+    for (let i = startIndex; i < Math.min(startIndex + 50, size * size); i++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.style.width = cellSize;
+      cell.style.height = cellSize;
+      cell.setAttribute("data-index", i);
+      fragment.appendChild(cell);
+    }
+    board.appendChild(fragment);
+
+    if (startIndex + 50 < size * size) {
+      requestAnimationFrame(() => createCellsChunk(startIndex + 50));
+    } else {
+      cells = Array.from(document.getElementsByClassName("cell"));
+      cells.forEach((cell) => {
+        cell.addEventListener("click", handleCellClick);
+      });
+    }
+  };
+
+  requestAnimationFrame(() => createCellsChunk(0));
 };
 
 const handleCellPlayed = (cell, index) => {
@@ -233,7 +248,7 @@ const handleRestartGame = () => {
 
   cells.forEach((cell) => {
     cell.addEventListener("click", handleCellClick);
-    cell.classList.remove("winning"); //rmove win
+    cell.classList.remove("winning");
   });
 
   if (gameMode === "PvC" && currentPlayer === aiSymbol) {
