@@ -1,42 +1,118 @@
 const board = document.getElementById("board");
 const statusDisplay = document.getElementById("status");
 const restartButton = document.getElementById("restart");
+const backButton = document.getElementById("back");
 const pvpButton = document.getElementById("pvp");
 const pvcButton = document.getElementById("pvc");
 const selectXButton = document.getElementById("select-x");
 const selectOButton = document.getElementById("select-o");
 const modeSelection = document.getElementById("mode-selection");
 const playerSelection = document.getElementById("player-selection");
+const boardSizeInput = document.getElementById("board-size");
+const startGameButton = document.getElementById("start-game");
+const selectionScreen = document.getElementById("selection-screen");
+const gameScreen = document.getElementById("game-screen");
 
+let boardSize = 3;
+let gameState = [];
+let winningConditions = [];
+let cells = [];
 let gameActive = true;
 let currentPlayer = "X";
-let playerSymbol = "X";
-let aiSymbol = "O";
-let gameState = Array(9).fill("");
-let gameMode = "pvp";
+let playerSymbol = null;
+let gameMode = null;
+let aiSymbol = null;
 
 const iconX = "assets/golang.png";
 const iconO = "assets/python.png";
 
-const winningConditions = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
-];
+selectXButton.innerHTML = `<img src="${iconX}" alt="X" />`;
+selectOButton.innerHTML = `<img src="${iconO}" alt="O" />`;
 
-for (let i = 0; i < 9; i++) {
-  const cell = document.createElement("div");
-  cell.classList.add("cell");
-  cell.setAttribute("data-index", i);
-  board.appendChild(cell);
-}
+const validateBoardSize = () => {
+  let boardSize = parseInt(boardSizeInput.value, 10);
 
-const cells = Array.from(document.getElementsByClassName("cell"));
+  if (isNaN(boardSize) || boardSize < 3 || boardSize > 64) {
+    alert("Please enter an integer number between 3 and 64.");
+    boardSizeInput.value = 3; // Reset to default if invalid
+    return 3;
+  }
+
+  return boardSize;
+};
+
+// Generate winning conditions based on the board size
+const generateWinningConditions = (size) => {
+  const conditions = [];
+  const winLength = size >= 5 ? 5 : 3;
+
+  // Rows
+  for (let row = 0; row < size; row++) {
+    for (let start = 0; start <= size - winLength; start++) {
+      const rowCondition = [];
+      for (let i = 0; i < winLength; i++) {
+        rowCondition.push(row * size + start + i);
+      }
+      conditions.push(rowCondition);
+    }
+  }
+
+  // Columns
+  for (let col = 0; col < size; col++) {
+    for (let start = 0; start <= size - winLength; start++) {
+      const colCondition = [];
+      for (let i = 0; i < winLength; i++) {
+        colCondition.push((start + i) * size + col);
+      }
+      conditions.push(colCondition);
+    }
+  }
+
+  for (let row = 0; row <= size - winLength; row++) {
+    for (let col = 0; col <= size - winLength; col++) {
+      const diagCondition = [];
+      for (let i = 0; i < winLength; i++) {
+        diagCondition.push((row + i) * size + (col + i));
+      }
+      conditions.push(diagCondition);
+    }
+  }
+
+  for (let row = size - 1; row >= winLength - 1; row--) {
+    for (let col = 0; col <= size - winLength; col++) {
+      const diagCondition = [];
+      for (let i = 0; i < winLength; i++) {
+        diagCondition.push((row - i) * size + (col + i));
+      }
+      conditions.push(diagCondition);
+    }
+  }
+
+  return conditions;
+};
+
+const createBoard = (size) => {
+  board.innerHTML = "";
+  board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+  let cellSize;
+  if (size <= 5) {
+    cellSize = "60px";
+  } else {
+    cellSize = "30px";
+  }
+
+  for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement("div");
+    cell.classList.add("cell");
+    cell.style.width = cellSize;
+    cell.style.height = cellSize;
+    cell.setAttribute("data-index", i);
+    board.appendChild(cell);
+  }
+
+  cells = Array.from(document.getElementsByClassName("cell"));
+};
 
 const handleCellPlayed = (cell, index) => {
   gameState[index] = currentPlayer;
@@ -52,19 +128,26 @@ const handlePlayerChange = () => {
 
 const checkWinner = () => {
   let roundWon = false;
+  let winningCells = [];
   for (let i = 0; i < winningConditions.length; i++) {
-    const [a, b, c] = winningConditions[i];
+    const condition = winningConditions[i];
     if (
-      gameState[a] &&
-      gameState[a] === gameState[b] &&
-      gameState[a] === gameState[c]
+      condition.every(
+        (index) =>
+          gameState[index] && gameState[index] === gameState[condition[0]]
+      )
     ) {
       roundWon = true;
+      winningCells = condition;
       break;
     }
   }
 
   if (roundWon) {
+    winningCells.forEach((index) => {
+      cells[index].classList.add("winning");
+    });
+
     const icon = currentPlayer === "X" ? iconX : iconO;
     statusDisplay.innerHTML = `Player <img src="${icon}" alt="${currentPlayer}" /> wins!`;
     gameActive = false;
@@ -74,7 +157,9 @@ const checkWinner = () => {
 };
 
 const handleResultValidation = () => {
-  if (checkWinner()) return;
+  if (checkWinner()) {
+    return;
+  }
 
   if (!gameState.includes("")) {
     statusDisplay.textContent = `Game ended in a draw!`;
@@ -86,97 +171,141 @@ const handleResultValidation = () => {
 
 const getBestMove = () => {
   for (let i = 0; i < winningConditions.length; i++) {
-    const [a, b, c] = winningConditions[i];
+    const condition = winningConditions[i];
+    const [a, b, c, d, e] = condition;
+
     if (gameState[a] === aiSymbol && gameState[b] === aiSymbol && !gameState[c])
       return c;
     if (gameState[a] === aiSymbol && !gameState[b] && gameState[c] === aiSymbol)
       return b;
     if (!gameState[a] && gameState[b] === aiSymbol && gameState[c] === aiSymbol)
       return a;
-  }
 
-  for (let i = 0; i < winningConditions.length; i++) {
-    const [a, b, c] = winningConditions[i];
-    if (
-      gameState[a] === playerSymbol &&
-      gameState[b] === playerSymbol &&
-      !gameState[c]
-    )
+    if (gameState[c] === aiSymbol && gameState[d] === aiSymbol && !gameState[e])
+      return e;
+    if (gameState[c] === aiSymbol && !gameState[d] && gameState[e] === aiSymbol)
+      return d;
+    if (!gameState[c] && gameState[d] === aiSymbol && gameState[e] === aiSymbol)
       return c;
-    if (
-      gameState[a] === playerSymbol &&
-      !gameState[b] &&
-      gameState[c] === playerSymbol
-    )
-      return b;
-    if (
-      !gameState[a] &&
-      gameState[b] === playerSymbol &&
-      gameState[c] === playerSymbol
-    )
-      return a;
   }
 
   const emptyCells = gameState
-    .map((val, idx) => (val ? null : idx))
-    .filter((val) => val !== null);
+    .map((value, index) => (value === "" ? index : null))
+    .filter((value) => value !== null);
   return emptyCells[Math.floor(Math.random() * emptyCells.length)];
 };
 
 const handleCellClick = (event) => {
-  const clickedCell = event.target.closest(".cell");
-  const clickedCellIndex = parseInt(clickedCell.dataset.index, 10);
+  const cell = event.target;
+  const index = parseInt(cell.getAttribute("data-index"), 10);
 
-  if (gameState[clickedCellIndex] || !gameActive) return;
+  if (gameState[index] !== "" || !gameActive) return;
 
-  handleCellPlayed(clickedCell, clickedCellIndex);
+  handleCellPlayed(cell, index);
   handleResultValidation();
 
-  if (gameMode === "pvc" && gameActive) {
-    currentPlayer = aiSymbol;
-    const bestMove = getBestMove();
-    const bestCell = cells[bestMove];
-    handleCellPlayed(bestCell, bestMove);
-    handleResultValidation();
+  if (!gameActive) return;
+
+  if (currentPlayer === aiSymbol) {
+    const aiMove = getBestMove();
+    if (aiMove !== undefined) {
+      const aiCell = cells[aiMove];
+      setTimeout(() => {
+        handleCellPlayed(aiCell, aiMove);
+        handleResultValidation();
+      }, 300);
+    }
   }
 };
 
 const handleRestartGame = () => {
+  boardSize = validateBoardSize();
+  gameState = Array(boardSize * boardSize).fill("");
   gameActive = true;
   currentPlayer = playerSymbol;
-  gameState.fill("");
-  const icon = currentPlayer === "X" ? iconX : iconO;
-  statusDisplay.innerHTML = `It's <img src="${icon}" alt="${currentPlayer}" />'s turn`;
-  cells.forEach((cell) => (cell.innerHTML = ""));
+  winningConditions = generateWinningConditions(boardSize);
+  createBoard(boardSize);
+  statusDisplay.innerHTML = `It's ${
+    currentPlayer === "X"
+      ? `<img src="${iconX}" alt="X" />`
+      : `<img src="${iconO}" alt="O" />`
+  }'s turn`;
+
+  cells.forEach((cell) => {
+    cell.addEventListener("click", handleCellClick);
+    cell.classList.remove("winning"); //rmove win
+  });
+
+  if (gameMode === "PvC" && currentPlayer === aiSymbol) {
+    const aiMove = getBestMove();
+    if (aiMove !== undefined) {
+      const aiCell = cells[aiMove];
+      setTimeout(() => {
+        handleCellPlayed(aiCell, aiMove);
+        handleResultValidation();
+      }, 300);
+    }
+  }
+};
+const resetSelection = () => {
+  selectXButton.classList.remove("selected");
+  selectOButton.classList.remove("selected");
+  pvpButton.classList.remove("selected");
+  pvcButton.classList.remove("selected");
+};
+
+backButton.addEventListener("click", () => {
+  gameScreen.style.display = "none";
+  selectionScreen.style.display = "block";
+  playerSymbol = null;
+  gameMode = null;
+  aiSymbol = null;
+  resetSelection();
+  enableStartButton();
+});
+
+const enableStartButton = () => {
+  startGameButton.disabled = !(playerSymbol && gameMode);
 };
 
 selectXButton.addEventListener("click", () => {
   playerSymbol = "X";
-  aiSymbol = "O";
-  playerSelection.style.display = "none";
-  modeSelection.style.display = "block";
-
-  handleRestartGame();
+  selectXButton.classList.add("selected");
+  selectOButton.classList.remove("selected");
+  enableStartButton();
 });
 
 selectOButton.addEventListener("click", () => {
   playerSymbol = "O";
-  aiSymbol = "X";
-  playerSelection.style.display = "none";
-  modeSelection.style.display = "block";
-
-  handleRestartGame();
+  selectOButton.classList.add("selected");
+  selectXButton.classList.remove("selected");
+  enableStartButton();
 });
 
 pvpButton.addEventListener("click", () => {
-  gameMode = "pvp";
-  handleRestartGame();
+  gameMode = "PvP";
+  aiSymbol = null;
+  pvpButton.classList.add("selected");
+  pvcButton.classList.remove("selected");
+  enableStartButton();
 });
 
 pvcButton.addEventListener("click", () => {
-  gameMode = "pvc";
-  handleRestartGame();
+  gameMode = "PvC";
+  aiSymbol = playerSymbol === "X" ? "O" : "X";
+  pvcButton.classList.add("selected");
+  pvpButton.classList.remove("selected");
+  enableStartButton();
 });
 
-cells.forEach((cell) => cell.addEventListener("click", handleCellClick));
+startGameButton.addEventListener("click", () => {
+  if (playerSymbol && gameMode) {
+    selectionScreen.style.display = "none";
+    gameScreen.style.display = "block";
+    handleRestartGame();
+  } else {
+    alert("Please select both a symbol and a game mode.");
+  }
+});
+
 restartButton.addEventListener("click", handleRestartGame);

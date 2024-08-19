@@ -3,29 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTG software</title>
+    <title>Tic-Tac-Toe Game</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" href="assets/GTG.webp" />
   </head>
   <body>
-    <div id="game">
-      <h1 id="name">Golang Python</h1>
+    <div id="selection-screen">
+      <h1 id="name">Tic-Tac-Toe</h1>
+
+      <div id="board-size-selection">
+        <label for="board-size">Select Size :</label>
+        <input
+          type="number"
+          id="board-size"
+          value="3"
+          min="3"
+          max="64"
+          step="1"
+          pattern="\d+"
+        />
+      </div>
 
       <div id="player-selection">
         <p>Select Your Symbol:</p>
-        <button id="select-x">Play as X</button>
-        <button id="select-o">Play as O</button>
+        <button id="select-x"></button>
+        <button id="select-o"></button>
       </div>
 
-      <div id="mode-selection" style="display: none">
+      <div id="mode-selection">
+        <p>Select Game Mode:</p>
         <button id="pvp">PvP</button>
         <button id="pvc">PvC</button>
       </div>
 
+      <button id="start-game" disabled>Start Game</button>
+    </div>
+
+    <div id="game-screen" style="display: none">
+      <button id="back">Back</button>
       <div id="board"></div>
       <div id="status"></div>
       <button id="restart">Restart Game</button>
     </div>
+
     <script src="app.js"></script>
   </body>
 </html>
