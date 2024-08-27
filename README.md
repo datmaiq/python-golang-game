@@ -1,4 +1,4 @@
-# Movie App
+# Tic Tac Toe Python and Golang Version
 
 ![Demo Image](assets/demo-gameplay.png)
 
